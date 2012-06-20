@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="400" height="300" 
+		 xmlns:comps="com.overmindgc.sudoku.comps.*"
+		 creationComplete="init()">
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.overmindgc.sudoku.comps.Square;
+			import com.overmindgc.sudoku.events.GameEvent;
+			import com.overmindgc.sudoku.utils.Consts;
+			import com.overmindgc.sudoku.utils.SquareGroupIndex;
+			
+			import mx.collections.ArrayCollection;
+			
+			/**所有方块数组*/
+			private var allSquareAc:ArrayCollection = new ArrayCollection();
+			
+			protected function init():void
+			{
+				for(var i:int=0; i<9; i++)
+				{
+					for(var j:int=0; j<9; j++)
+					{
+						var square:Square = new Square();
+						square.x = j * Consts.squareWH;
+						square.y = i * Consts.squareWH;
+						boardComp.addElement(square);
+						allSquareAc.addItem(square);
+					}
+				}
+				
+				boardComp.addEventListener(GameEvent.openSelectNum,openSelectNumComp_Handler);
+				
+				selectNumComp.addEventListener(GameEvent.selectNum,squareSelectedNumber_Handler);
+			}
+			
+			/**
+			 * 设置游戏级别初始数据
+			 * */
+			public function setGameLevelData(dataAc:ArrayCollection):void
+			{
+				for(var i:int=0; i<dataAc.length; i++)
+				{
+					var dataValue:int = dataAc.getItemAt(i) as int;
+					var sq:Square = boardComp.getElementAt(i) as Square;
+					if(dataValue != 0)
+					{
+						sq.number = dataValue;
+						sq.canChange = false;
+					} else
+					{
+						sq.canChange = true;
+					}
+				}
+			}
+			
+			/**
+			 * 游戏完成检测
+			 * */
+			protected function gameCompleteDetect(square:Square):void
+			{
+				//检测是否重复
+				var horRepet:Boolean = repetDetect(square,SquareGroupIndex.horizontalIndexAc);
+				var verRepet:Boolean = repetDetect(square,SquareGroupIndex.verticalIndexAc);
+				var groupRepet:Boolean = repetDetect(square,SquareGroupIndex.groupIndexAc);
+				
+				if(isSetAllNumber(allSquareAc))
+				{
+					if(!horRepet && !verRepet && !groupRepet)
+					{
+						dispatchEvent(new GameEvent(GameEvent.completeGame));
+					} else
+					{
+						return;
+					}
+				}
+			}
+			
+			/*******************************数字重复检测***********************************/
+			/**
+			 * 行列组检测
+			 * */
+			protected function repetDetect(square:Square,indexAc:ArrayCollection):Boolean
+			{
+				var hasRepet:Boolean = false;
+				
+				var squareIndex:int = boardComp.getElementIndex(square);
+				
+				var sqAc:ArrayCollection = indexAc;
+				
+				//取得所在行的数组
+				var sqArr:Array = []; 
+				
+				for(var i:int=0; i<sqAc.length; i++)
+				{
+					if(sqArr.length > 0)
+					{
+						break;
+					}
+						
+					var sArr:Array = sqAc.getItemAt(i) as Array;
+					
+					for each(var sqIndex:int in sArr)
+					{
+						if(sqIndex == squareIndex)
+						{
+							sqArr = sArr;
+							break;
+						}
+					}
+				}
+				
+				if(sqArr.length > 0)
+				{
+					var sqGroupAc:ArrayCollection = getGroupSquareByIndex(sqArr);
+					
+					if(isSetAllNumber(sqGroupAc))
+					{
+						if(findRepetNumber(sqGroupAc))
+						{
+							highLightSquareGroup(sqGroupAc);
+							hasRepet = true;
+						} else
+						{
+							cancelHighLightSquareGroup(sqGroupAc);
+							hasRepet = false;
+						}
+					}
+				}
+				
+				return hasRepet;
+			}
+			
+			/**
+			 * 根据数组下标取得一组方块对象的数组
+			 * */
+			protected function getGroupSquareByIndex(indexArr:Array):ArrayCollection
+			{
+				var sqGroupAc:ArrayCollection = new ArrayCollection();
+				for each(var index:int in indexArr)
+				{
+					sqGroupAc.addItem(boardComp.getElementAt(index));
+				}
+				
+				return sqGroupAc;
+			}
+			
+			/**
+			 * 高亮一组
+			 * */
+			protected function highLightSquareGroup(squareAc:ArrayCollection):void
+			{
+				for each(var sq:Square in squareAc)
+				{
+					sq.isRepet = true;
+					sq.heighLight();
+				}
+			}
+			
+			/**
+			 * 取消高亮组
+			 * */
+			protected function cancelHighLightSquareGroup(squareAc:ArrayCollection):void
+			{
+				for each(var sq:Square in squareAc)
+				{
+					sq.isRepet = false;
+					sq.cancelHeighLight();
+				}
+			}
+			
+			/**
+			 * 数字是否都填上
+			 * */
+			protected function isSetAllNumber(squareAc:ArrayCollection):Boolean
+			{
+				var isSetAll:Boolean = true;
+				
+				for each(var sq:Square in squareAc)
+				{
+					if(sq.number == 0)
+					{
+						isSetAll = false;
+					}
+				}
+				
+				return isSetAll;
+			}
+			
+			/**
+			 * 判断重复数字
+			 * */
+			protected function findRepetNumber(squareAc:ArrayCollection):Boolean
+			{
+				var isRepet:Boolean = false;
+				
+				//找到重复的方块
+				var sqLength:int = squareAc.length;
+				for(var i:int=0; i<sqLength; i++)
+				{
+					if(isRepet == true)
+					{
+						break;
+					}
+					
+					for(var j:int=0; j<sqLength; j++)
+					{
+						if(i != j)
+						{
+							var sqi:Square = Square(squareAc.getItemAt(i));
+							var sqj:Square = Square(squareAc.getItemAt(j));
+							if(sqi.number == sqj.number)
+							{
+								isRepet = true;
+								break;
+							}
+						}
+					}
+				}
+				
+				return isRepet;
+			}
+			
+			/*******************************数字重复检测end***********************************/
+			
+			
+			/**
+			 * 打开显示数字选择组件
+			 * */
+			protected function openSelectNumComp_Handler(event:GameEvent):void
+			{
+				var square:Square = event.data as Square;
+				if(square == selectNumComp.currSquare)
+				{
+					if(selectNumComp.visible == true)
+					{
+						selectNumComp.visible = false;
+						//					selectNumComp.currSquare = null;
+						square.cancelHeighLight();
+					} else
+					{
+						selectNumComp.visible = true;
+						square.heighLight();
+					}
+				} else
+				{
+					if(selectNumComp.currSquare)
+					{
+						selectNumComp.currSquare.cancelHeighLight();
+					}
+					square.heighLight();
+					selectNumComp.visible = true;
+					selectNumComp.x = square.x + square.width + 5;
+					selectNumComp.y = square.y + 5;
+					selectNumComp.currSquare = square;
+				}
+			}
+			
+			/**
+			 * 选择完数字响应处理
+			 * */
+			protected function squareSelectedNumber_Handler(event:GameEvent):void
+			{
+				var square:Square = event.data as Square;
+				square.cancelHeighLight();
+				gameCompleteDetect(square);
+			}
+			
+			/**
+			 * 重置游戏面板
+			 * */
+			public function resetGameBoard():void
+			{
+				selectNumComp.visible = false;
+				for each(var square:Square in allSquareAc)
+				{
+					square.cancelHeighLight();
+					if(square.canChange)
+					{
+						square.number = 0;
+					}
+				}
+			}
+			
+			/**
+			 * 清空游戏面板数据
+			 * */
+			public function cleanGameBoard():void
+			{
+				selectNumComp.visible = false;
+				for each(var square:Square in allSquareAc)
+				{
+					square.isRepet = false;
+					square.cancelHeighLight();
+					square.number = 0;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<comps:Board id="boardComp">
+		
+	</comps:Board>
+	
+	<comps:SelectNumberComp id="selectNumComp" 
+							visible="false"/>
+</s:Group>

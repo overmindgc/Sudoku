@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="81" height="81"
+				   borderStyle="solid"
+				   creationComplete="init()">
+	<s:layout>
+		<s:TileLayout paddingLeft="1" paddingTop="1"
+					  horizontalGap="1" verticalGap="1"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.overmindgc.sudoku.events.GameEvent;
+			
+			import mx.controls.Label;
+			import mx.controls.LinkButton;
+			import mx.core.IVisualElement;
+			
+			import spark.components.BorderContainer;
+			import spark.layouts.HorizontalLayout;
+			/**记录当前设置数字的方块*/
+			public var currSquare:Square;
+			
+			protected function init():void
+			{
+				for(var i:int=0; i<9; i++)
+				{
+					var hLayout:HorizontalLayout = new HorizontalLayout();
+					hLayout.horizontalAlign = "center";
+					hLayout.verticalAlign = "middle";
+					
+					var bdContainer:BorderContainer = new BorderContainer();
+					bdContainer.width = 25;
+					bdContainer.height = 25;
+					bdContainer.buttonMode = true;
+					bdContainer.layout = hLayout;
+					bdContainer.addEventListener(MouseEvent.CLICK,bordercontainer_clickHandler);
+					this.addElement(bdContainer);
+					
+					var linkBtn:LinkButton = new LinkButton();
+					linkBtn.width = 24;
+					linkBtn.height = 24;
+					linkBtn.label = String(i + 1);
+					bdContainer.addElement(linkBtn);
+//					var lab:Label = new Label();
+//					lab.width = 10;
+//					lab.text = String(i + 1);
+//					lab.setStyle("fontWeight","bold");
+//					bdContainer.addElement(lab);
+					
+				}
+			}
+			
+			public function hidden():void
+			{
+				this.visible = false;
+			}
+			
+			protected function bordercontainer_clickHandler(event:MouseEvent):void
+			{
+				if(event.currentTarget is BorderContainer)
+				{
+					currSquare.number = this.getElementIndex(IVisualElement(event.currentTarget)) + 1;
+					hidden();
+					
+					dispatchEvent(new GameEvent(GameEvent.selectNum,currSquare));
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+</s:BorderContainer>

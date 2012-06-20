@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="700" height="500"
+		 xmlns:containers="com.dougmccune.containers.*"
+		 creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			import com.overmindgc.sudoku.comps.GamePreviewComp;
+			import com.overmindgc.sudoku.events.GameEvent;
+			import com.overmindgc.sudoku.utils.Consts;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			/**游戏难度*/
+			public var gameType:String = Consts.easyMode;
+			
+			/**列表窗口标题文字*/
+			[Bindable]
+			public var titleText:String = "简单模式";
+			
+			public var easyXmlList:XMLList;
+			
+			public var normalXmlList:XMLList;
+			
+			public var hardXmlList:XMLList;
+			
+			/**游戏窗口*/
+			private var gameWin:GameWindow;
+			
+			protected function init():void
+			{
+				var xmlLoader:URLLoader = new URLLoader();
+				
+				xmlLoader.addEventListener(Event.COMPLETE,function(evt:Event):void
+				{
+					var gameXml:XML = XML(evt.target.data);
+					easyXmlList = XMLList(gameXml.easy.sudoku);
+					normalXmlList = XMLList(gameXml.normal.sudoku);
+					hardXmlList = XMLList(gameXml.hard.sudoku);
+					
+					getGameListData();
+				});
+				
+				xmlLoader.addEventListener(IOErrorEvent.IO_ERROR,function(evt:Event):void
+				{
+					Alert.show("获取游戏数据出错了","哎呀呀");
+				});
+				xmlLoader.load(new URLRequest("gameSource.xml"));
+				
+				addEventListener(GameEvent.startGame,startGame_Handler);
+			}
+			/**
+			 * 根据类型取得游戏列表数据
+			 * */
+			public function getGameListData():void
+			{
+				switch(gameType)
+				{
+					case Consts.easyMode:
+					{
+						generateGameList(easyXmlList);
+						break;
+					}
+					case Consts.normalMode:
+					{
+						generateGameList(normalXmlList);
+						break;
+					}
+					case Consts.hardMode:
+					{
+						generateGameList(hardXmlList);
+						break;
+					}
+				}
+			}
+			
+			protected function generateGameList(gameXmlList:XMLList):void
+			{
+				for each(var gameXml:XML in gameXmlList)
+				{
+					var gp:GamePreviewComp = new GamePreviewComp();
+					gp.gameXml = gameXml;
+					coverflow.addChild(gp);
+				}
+			}
+			
+			/**
+			 * 开始游戏处理
+			 * */
+			protected function startGame_Handler(event:GameEvent):void
+			{
+				if(!gameWin)
+				{
+					gameWin = new GameWindow();
+				}
+				
+				PopUpManager.addPopUp(gameWin,this,true);
+				PopUpManager.centerPopUp(gameWin);
+				
+				gameWin.gameXml = event.data as XML;
+			}
+			
+			
+			
+			protected function btnPrevious_clickHandler(event:MouseEvent):void
+			{
+				if(coverflow.selectedIndex > 0)
+				{
+					coverflow.selectedIndex = coverflow.selectedIndex - 1;
+				} else
+				{
+					coverflow.selectedIndex = coverflow.numChildren - 1;
+				}
+			}
+			
+			protected function btnNext_clickHandler(event:MouseEvent):void
+			{
+				if(coverflow.selectedIndex < coverflow.numChildren - 1)
+				{
+					coverflow.selectedIndex = coverflow.selectedIndex + 1;
+				} else
+				{
+					coverflow.selectedIndex = 0;
+				}
+			}
+			
+			protected function close():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<mx:Canvas id="titleWinList"
+				width="100%" height="100%">
+		<!--<s:layout>
+			<s:HorizontalLayout horizontalAlign="center"
+								verticalAlign="middle"/>
+			<s:BasicLayout />
+		</s:layout>-->
+		<s:BorderContainer width="100%" height="100%"
+						   borderWeight="5"
+						   backgroundImage="@Embed('assets/images/background.png')">
+			<!--<s:Spacer width="10" />-->
+			<!--<s:Button id="btnPrevious" label="←★" 
+			width="50"
+			click="btnPrevious_clickHandler(event)"/>-->
+			<mx:Label id="labType" 
+					 x="10"
+					 y="10"
+					 text="{titleText}" 
+					 fontSize="14"/>
+			<s:Image id="imgClose" 
+					 x="{titleWinList.width - imgClose.width - 10}"
+					 y="5"
+				     source="@Embed('assets/images/close.png')" 
+				     buttonMode="true"
+					 toolTip="关闭"
+					 click="close()"/>
+			<s:Image id="imgPrevious"
+					 x="20"
+					 y="{(titleWinList.height - imgPrevious.height) / 2}"
+					 source="@Embed('assets/images/arrow-left.png')"
+					 buttonMode="true"
+					 toolTip="向左翻页"
+					 click="btnPrevious_clickHandler(event)" />
+			<containers:CarouselContainer id="coverflow" 
+										  x="{(this.width - coverflow.width) / 2}"
+										  y="0"
+										  width="100%" height="100%" 
+										  horizontalGap="80" 
+										  segments="6" reflectionEnabled="true">
+				<!--<mx:Canvas width="300" height="280" >
+				<s:Button label="按钮1"/>
+				</mx:Canvas>-->
+			</containers:CarouselContainer>
+			<!--<s:Button id="btnNext" label="★→" 
+			width="50"
+			click="btnNext_clickHandler(event)"/>-->
+			<s:Image id="imgNext"
+					 x="{titleWinList.width - imgNext.width - 20}"
+					 y="{(titleWinList.height - imgNext.height) / 2}"
+					 source="@Embed('assets/images/arrow-right.png')"
+					 buttonMode="true"
+					 toolTip="向右翻页"
+					 click="btnNext_clickHandler(event)" />
+			<!--<s:Spacer width="10" />-->
+		</s:BorderContainer>
+	</mx:Canvas>
+</s:Group>

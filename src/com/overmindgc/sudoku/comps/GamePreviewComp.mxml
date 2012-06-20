@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:mx="library://ns.adobe.com/flex/mx" 
+		   width="300" height="300"
+		   creationComplete="init()">
+	<fx:Script>
+		<![CDATA[
+			import com.overmindgc.sudoku.events.GameEvent;
+			public var gameXml:XML;
+			
+			protected function init():void
+			{
+				labName.text = gameXml.@name;
+			}
+			
+			protected function imgPreview_clickHandler(event:MouseEvent):void
+			{
+				//发出事件通知游戏开始
+				this.dispatchEvent(new GameEvent(GameEvent.startGame,gameXml,true));
+			}
+			
+		]]>
+	</fx:Script>
+	<mx:Label id="labName" 
+			 x="{(this.width - labName.width) / 2}"
+			 y="0"
+			 fontSize="20"
+			 fontWeight="bold"/>
+	<s:Image id="imgPreview" 
+			 x="{(this.width - imgPreview.width) / 2}"
+			 y="{(this.height - imgPreview.height) / 2}"
+			 source="@Embed('assets/images/sudokupreview.png')"
+			 toolTip="点击开始游戏"
+			 buttonMode="true"
+			 click="imgPreview_clickHandler(event)"/>
+	<s:Button id="btnStart" 
+			  x="{(this.width - btnStart.width) / 2}"
+			  y="{this.height - btnStart.height - 10}"
+			  label="Start!"
+			  fontSize="14"
+			  click="imgPreview_clickHandler(event)"/>
+</mx:Canvas>

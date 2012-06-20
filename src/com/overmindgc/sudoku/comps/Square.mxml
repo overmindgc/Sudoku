@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="{Consts.squareWH}" height="{Consts.squareWH}"
+				   backgroundColor="0xffffff"
+				   backgroundAlpha="0.01"
+				   borderVisible="false"
+				   buttonMode="true"
+				   click="bordercontainer_clickHandler(event)">
+	<s:layout>
+		<s:HorizontalLayout horizontalAlign="center"
+							verticalAlign="middle"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.overmindgc.sudoku.events.GameEvent;
+			import com.overmindgc.sudoku.utils.Consts;
+			
+			import mx.collections.ArrayCollection;
+			import mx.graphics.SolidColor;
+			import mx.managers.PopUpManager;
+			
+			/**是否可以改变数字*/
+			[Bindable]
+			public var canChange:Boolean = true;
+			
+			/**是否是重复数字**/
+			public var isRepet:Boolean = false;
+			
+			/**重复类型数组*/
+//			public var repetType:ArrayCollection = new ArrayCollection();
+			
+			private var _number:int = 0;
+			
+			private var selectNumComp:SelectNumberComp = new SelectNumberComp();
+			
+			private var sColor:SolidColor = new SolidColor();
+
+			[Bindable]
+			/**方格数字*/
+			public function get number():int
+			{
+				return _number;
+			}
+
+			/**
+			 * @private
+			 */
+			public function set number(value:int):void
+			{
+				_number = value;
+				
+				if(number == 0)
+				{
+					labNum.text = "";
+				} else
+				{
+					labNum.text = String(_number);
+				}
+			}
+			
+			/**
+			 * 高亮方块
+			 * */
+			public function heighLight():void
+			{
+				sColor.color = 0xee0000;
+				sColor.alpha = 0.2;
+				this.backgroundFill = sColor;
+			}
+			
+			/**
+			 * 取消高亮
+			 * */
+			public function cancelHeighLight():void
+			{
+				if(!isRepet)
+				{
+					this.backgroundFill = null;
+				}
+			}
+
+			protected function bordercontainer_clickHandler(event:MouseEvent):void
+			{
+				popSelectNumComp();
+			}
+			
+			/**
+			 * 发出选择数字事件
+			 * */
+			protected function popSelectNumComp():void
+			{
+				if(canChange)
+				{
+					dispatchEvent(new GameEvent(GameEvent.openSelectNum,this,true));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+		
+	<s:Label id="labNum" text=""
+			 textAlign="center"
+			 fontSize="20"
+			 buttonMode="true"
+			 color="{canChange ? 0x0000ff : 0x000000}"/>
+</s:BorderContainer>

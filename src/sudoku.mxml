@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="100%" height="100%">
+	
+	<fx:Script>
+		
+		<![CDATA[
+			import com.overmindgc.sudoku.GameListView;
+			import com.overmindgc.sudoku.utils.Consts;
+			
+			import mx.managers.PopUpManager;
+			
+			/**游戏列表窗口*/
+			private var gameEasyListWin:GameListView;
+			private var gameNormalListWin:GameListView;
+			private var gameHardListWin:GameListView;
+			
+			protected function btnEasy_clickHandler(event:MouseEvent):void
+			{
+				openGameWin(Consts.easyMode);
+			}
+			
+			protected function btnNormal_clickHandler(event:MouseEvent):void
+			{
+				openGameWin(Consts.normalMode);
+			}
+			
+			protected function btnHard_clickHandler(event:MouseEvent):void
+			{
+				openGameWin(Consts.hardMode);
+			}
+			
+			/**
+			 * 打开游戏窗口
+			 * */
+			protected function openGameWin(type:String):void
+			{
+				switch(type)
+				{
+					case Consts.easyMode :
+					{
+						if(!gameEasyListWin)
+						{
+							gameEasyListWin = new GameListView();
+							gameEasyListWin.gameType = type;
+							gameEasyListWin.titleText = "简单模式";
+						}
+						openGameListWin(gameEasyListWin);
+						break;
+					}
+					case Consts.normalMode :
+					{
+						if(!gameNormalListWin)
+						{
+							gameNormalListWin = new GameListView();
+							gameNormalListWin.gameType = type;
+							gameNormalListWin.titleText = "普通模式";
+						}
+						openGameListWin(gameNormalListWin);
+						break;
+					}
+					case Consts.hardMode :
+					{
+						if(!gameHardListWin)
+						{
+							gameHardListWin = new GameListView();
+							gameHardListWin.gameType = type;
+							gameHardListWin.titleText = "高级模式";
+						}
+						openGameListWin(gameHardListWin);
+						break;
+					}
+				}
+				
+				
+			}
+			
+			protected function openGameListWin(gameListWin:GameListView):void
+			{
+				PopUpManager.addPopUp(gameListWin,this,true);
+				gameListWin.isPopUp = true;
+				PopUpManager.centerPopUp(gameListWin);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:BorderContainer width="100%" height="100%"
+					   backgroundImage="@Embed('assets/images/background.png')">
+		<s:layout>
+			<s:VerticalLayout verticalAlign="middle"
+							  horizontalAlign="center"/>
+		</s:layout>
+		<mx:Label id="labGameName" text="数独（Sudoku）" 
+				  fontSize="50"/>
+		<s:Spacer height="30" />
+		<mx:Label id="labGameVersion" text="v1.0" 
+				  fontSize="30"/>
+		<s:Spacer height="50" />
+		<s:HGroup gap="20">
+			<s:Button id="btnEasy" 
+					  label="简单"
+					  width="150"
+					  height="80"
+					  fontSize="30"
+					  click="btnEasy_clickHandler(event)"/>
+			<s:Button id="btnNormal" 
+					  label="普通" 
+					  width="150"
+					  height="80"
+					  fontSize="30"
+					  click="btnNormal_clickHandler(event)"/>
+			<s:Button id="btnHard" 
+					  label="高级" 
+					  width="150"
+					  height="80"
+					  fontSize="30"
+					  click="btnHard_clickHandler(event)"/>
+		</s:HGroup>
+	</s:BorderContainer>
+</s:Application>

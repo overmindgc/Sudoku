@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   width="700" height="500" 
+				   backgroundImage="@Embed('assets/images/background.png')"
+				   borderWeight="2"
+				   xmlns:sudoku="com.overmindgc.sudoku.*"
+				   creationComplete="init()">
+	<s:layout>
+		<s:BasicLayout />
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.overmindgc.sudoku.comps.GameCompleteWin;
+			import com.overmindgc.sudoku.events.GameEvent;
+			import com.overmindgc.sudoku.utils.Consts;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.Text;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			/**游戏XML数据*/
+			private var _gameXml:XML;
+			
+			/**游戏难度*/
+			[Bindable]
+			private var gameTypeText:String = "";
+			/**游戏名称*/
+			[Bindable]
+			private var gameName:String = "";
+			/**游戏时间字符串*/
+			[Bindable]
+			private var timeStr:String = "00:00";
+			
+			private var secNum:int = 0;
+			private var minNum:int = 0;
+			
+			private const MIN_MASK:String = "00";    
+			private const SEC_MASK:String = "00";
+			
+			/**游戏计时器*/
+			private var timer:Timer = new Timer(1000);
+			
+			/**游戏完成界面*/
+			private var completeWin:GameCompleteWin;
+			
+			public function get gameXml():XML
+			{
+				return _gameXml;
+			}
+			
+			public function set gameXml(value:XML):void
+			{
+				_gameXml = value;
+				
+				gameName = _gameXml.@name;
+				
+				timer.addEventListener(TimerEvent.TIMER,startTimer_Handler);
+				
+				timer.start();
+				
+				gameMainView.setGameLevelData(analysisGameData(_gameXml.text()));
+			}
+			
+			protected function init():void
+			{
+				gameMainView.addEventListener(GameEvent.completeGame,gameComplete_Handler);
+			}
+			
+			/**
+			 * 分析xml数据转换成数组
+			 * */
+			protected function analysisGameData(dataText:String):ArrayCollection
+			{
+				var dataAc:ArrayCollection = new ArrayCollection();
+				
+				//去除换行符
+				dataText = dataText.replace(new RegExp("[\r \n \t]","g"),"");
+				
+				var dataArr:Array = dataText.split(",");
+				
+				for each(var n:String in dataArr)
+				{
+					dataAc.addItem(int(n));
+				}
+				
+				return dataAc;
+			}
+			
+			/**
+			 * 游戏完成处理
+			 * */
+			protected function gameComplete_Handler(event:GameEvent):void
+			{
+				timer.stop();
+				
+				if(!completeWin)
+				{
+					completeWin = new GameCompleteWin();
+					
+					completeWin.addEventListener(GameEvent.backToGameList,function(evt:GameEvent):void
+					{
+						completeWin.close();
+						reset();
+						close();
+					});
+					
+					completeWin.addEventListener(GameEvent.restartGame,function(evt:GameEvent):void
+					{
+						completeWin.close();
+						reset();
+					});
+				}
+				completeWin.timeStr = timeStr;
+				PopUpManager.addPopUp(completeWin,this,true);
+				PopUpManager.centerPopUp(completeWin);
+			}
+			
+			protected function startTimer_Handler(event:TimerEvent):void
+			{
+				var min:String = String(MIN_MASK + secNum).substr(-MIN_MASK.length);    
+				var sec:String = String(SEC_MASK + minNum).substr(-SEC_MASK.length);
+				
+				if(secNum >= 59)
+				{
+					minNum++;
+					secNum = 0;
+				} else
+				{
+					secNum++;
+				}
+				
+				timeStr = sec + ":" + min;
+			}
+			
+			protected function btnAbandon_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("确认要放弃游戏吗？","提示",Alert.YES|Alert.NO,this,function(evt:CloseEvent):void
+				{
+					if(evt.detail == Alert.YES)
+					{
+						close();
+					} else
+					{
+						return;
+					}
+				});
+			}
+			
+			protected function btnRestart_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("确认要重新开始？","提示",Alert.YES|Alert.NO,this,function(evt:CloseEvent):void
+				{
+					if(evt.detail == Alert.YES)
+					{
+						reset();
+					} else
+					{
+						return;
+					}
+				});
+			}
+			
+			protected function reset():void
+			{
+				gameMainView.resetGameBoard();
+				
+				timeStr = "00:00"
+				secNum = 0;
+				minNum = 0;
+				
+				if(!timer.running) timer.start();
+			}
+			
+			protected function close():void
+			{
+				gameMainView.cleanGameBoard();
+				
+				if(timer.running)
+				{
+					timer.stop();
+				}
+				timeStr = "00:00"
+				secNum = 0;
+				minNum = 0;
+				timer.removeEventListener(TimerEvent.TIMER,startTimer_Handler);
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<!--<s:Label id="labGameType" 
+			 x="5"
+			 y="5"
+			 text="游戏难度：{gameTypeText}" />-->
+	
+	<mx:Label id="labName"
+			 x="450"
+			 y="80"
+			 width="250"
+			 text="{gameName}" 
+			 textAlign="center"
+			 fontSize="20"
+			 fontWeight="bold"/>
+	
+	<mx:Label x="450" 
+			 y="150" 
+			 width="250"
+			 text="游戏计时"
+			 textAlign="center"
+			 fontSize="18"
+			 fontWeight="bold"/>
+	
+	<s:Label id="labTime"
+			 x="450" 
+			 y="180" 
+			 width="250"
+			 text="{timeStr}"
+			 textAlign="center"
+			 fontSize="20"
+			 fontWeight="bold"/>
+	
+	<s:Button id="btnAbandon" 
+			  x="525"
+			  y="330"
+			  label="放弃游戏"
+			  width="100"
+			  height="30"
+			  fontSize="16"
+			  click="btnAbandon_clickHandler(event)"/>
+	
+	<s:Button id="btnRestart" 
+			  x="525"
+			  y="400"
+			  label="重新开始" 
+			  width="100"
+			  height="30"
+			  fontSize="16"
+			  click="btnRestart_clickHandler(event)"/>
+	
+	<sudoku:GameMainView id="gameMainView" 
+						 x="50" y="50"/>
+</s:BorderContainer>
